@@ -397,7 +397,7 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
                 fraud_score=fraud_score,
             )
 
-    except Exception:
+    except Exception as exc:  # noqa: BLE001  # intentional: any failure must publish ERROR to close the SSE stream cleanly; always re-raised
         logger.exception("pipeline_error", claim_id=claim_id)
         # Publish error event so the SSE stream can close cleanly
         await _publish(
