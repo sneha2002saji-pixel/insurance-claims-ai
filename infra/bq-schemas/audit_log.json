@@ -1,0 +1,10 @@
+[
+  {"name": "id",              "type": "STRING",    "mode": "REQUIRED", "description": "Unique audit event identifier (UUID)"},
+  {"name": "claim_id",        "type": "STRING",    "mode": "REQUIRED", "description": "Foreign key to insurance_claims.id"},
+  {"name": "event_type",      "type": "STRING",    "mode": "REQUIRED", "description": "CLAIM_CREATED|STATUS_CHANGED|AGENT_STAGE_COMPLETE|HUMAN_DECISION|DOCUMENT_UPLOADED"},
+  {"name": "previous_status", "type": "STRING",    "mode": "NULLABLE", "description": "Claim status before this event"},
+  {"name": "new_status",      "type": "STRING",    "mode": "NULLABLE", "description": "Claim status after this event"},
+  {"name": "actor",           "type": "STRING",    "mode": "REQUIRED", "description": "Identity that triggered the event"},
+  {"name": "details_json",    "type": "JSON",      "mode": "NULLABLE", "description": "Additional event-specific context as JSON"},
+  {"name": "created_at",      "type": "TIMESTAMP", "mode": "REQUIRED", "description": "UTC timestamp when this audit event was recorded"}
+]

@@ -1,0 +1,9 @@
+{
+  "id": "claim-003",
+  "claim_type": "PROPERTY",
+  "claimant_name": "Mike Chen",
+  "policy_number": "PROP-2024-017",
+  "amount": 8000.00,
+  "incident_description": "Basement flooding due to storm. Electronics and furniture damaged. Third claim this year.",
+  "documents": ["damage_photos.zip", "contractor_estimate.pdf", "weather_report.pdf"]
+}

@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in actual values.
+# NEVER commit terraform.tfvars — it is in .gitignore.
+
+project_id    = "upbeat-repeater-477110-q6"
+region        = "us-central1"
+environment   = "prod"
+bq_dataset_id = "insurance"

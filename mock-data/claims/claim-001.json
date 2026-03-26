@@ -1,0 +1,9 @@
+{
+  "id": "claim-001",
+  "claim_type": "AUTO",
+  "claimant_name": "John Smith",
+  "policy_number": "AUTO-2024-001",
+  "amount": 3000.00,
+  "incident_description": "Minor rear-end collision at traffic light. Vehicle has dented bumper and broken tail light.",
+  "documents": ["police_report.pdf", "repair_estimate.pdf", "photos.zip"]
+}

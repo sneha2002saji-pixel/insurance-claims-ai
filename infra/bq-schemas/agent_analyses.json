@@ -1,0 +1,11 @@
+[
+  {"name": "id",               "type": "STRING",    "mode": "REQUIRED", "description": "Unique analysis record identifier (UUID)"},
+  {"name": "claim_id",         "type": "STRING",    "mode": "REQUIRED", "description": "Foreign key to insurance_claims.id"},
+  {"name": "stage",            "type": "STRING",    "mode": "REQUIRED", "description": "document_verification|policy_validation|fraud_detection|settlement_calculation|decision"},
+  {"name": "agent_name",       "type": "STRING",    "mode": "REQUIRED", "description": "Name of the ADK agent that produced this analysis"},
+  {"name": "output_json",      "type": "JSON",      "mode": "NULLABLE", "description": "Full structured output from the agent stage"},
+  {"name": "confidence_score", "type": "FLOAT64",   "mode": "NULLABLE", "description": "Agent confidence in its decision (0.0-1.0)"},
+  {"name": "fraud_score",      "type": "FLOAT64",   "mode": "NULLABLE", "description": "Fraud risk score (0.0-1.0)"},
+  {"name": "duration_ms",      "type": "INT64",     "mode": "NULLABLE", "description": "Time taken by this agent stage in milliseconds"},
+  {"name": "created_at",       "type": "TIMESTAMP", "mode": "REQUIRED", "description": "UTC timestamp when this analysis was recorded"}
+]

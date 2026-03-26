@@ -1,0 +1,12 @@
+[
+  {"name": "id",                   "type": "STRING",    "mode": "REQUIRED", "description": "Unique claim identifier (UUID)"},
+  {"name": "claim_type",           "type": "STRING",    "mode": "REQUIRED", "description": "AUTO | HEALTH | PROPERTY"},
+  {"name": "claimant_name",        "type": "STRING",    "mode": "REQUIRED", "description": "Full name of the policy holder"},
+  {"name": "policy_number",        "type": "STRING",    "mode": "REQUIRED", "description": "Insurance policy number"},
+  {"name": "amount",               "type": "FLOAT64",   "mode": "REQUIRED", "description": "Claimed amount in USD"},
+  {"name": "incident_description", "type": "STRING",    "mode": "NULLABLE", "description": "Free-text description of the incident"},
+  {"name": "document_refs",        "type": "JSON",      "mode": "NULLABLE", "description": "JSON array of GCS document references"},
+  {"name": "status",               "type": "STRING",    "mode": "REQUIRED", "description": "pending|under_review|agent_approved|awaiting_human_approval|rejected|partial_settlement|settled"},
+  {"name": "created_at",           "type": "TIMESTAMP", "mode": "REQUIRED", "description": "UTC timestamp when the claim was submitted"},
+  {"name": "updated_at",           "type": "TIMESTAMP", "mode": "REQUIRED", "description": "UTC timestamp of the most recent status update"}
+]

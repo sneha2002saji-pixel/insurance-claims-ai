@@ -1,0 +1,9 @@
+{
+  "id": "claim-002",
+  "claim_type": "HEALTH",
+  "claimant_name": "Sarah Johnson",
+  "policy_number": "HEALTH-2024-042",
+  "amount": 15000.00,
+  "incident_description": "Emergency appendectomy surgery including 3-day hospital stay and post-operative care.",
+  "documents": ["hospital_discharge.pdf", "surgical_report.pdf", "itemized_bill.pdf"]
+}

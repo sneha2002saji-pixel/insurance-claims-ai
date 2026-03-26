@@ -1,0 +1,12 @@
+[
+  {"name": "id",               "type": "STRING",    "mode": "REQUIRED", "description": "Unique approval request identifier (UUID)"},
+  {"name": "claim_id",         "type": "STRING",    "mode": "REQUIRED", "description": "Foreign key to insurance_claims.id"},
+  {"name": "trigger_reason",   "type": "STRING",    "mode": "REQUIRED", "description": "HIGH_FRAUD_SCORE|HIGH_AMOUNT|POLICY_EXCEPTION|MULTI_CLAIM"},
+  {"name": "fraud_score",      "type": "FLOAT64",   "mode": "NULLABLE", "description": "Fraud score at the time of escalation (0.0-1.0)"},
+  {"name": "amount",           "type": "FLOAT64",   "mode": "REQUIRED", "description": "Claimed amount that triggered escalation"},
+  {"name": "assigned_to",      "type": "STRING",    "mode": "NULLABLE", "description": "Email of the claims adjuster assigned for review"},
+  {"name": "decision",         "type": "STRING",    "mode": "NULLABLE", "description": "APPROVE|REJECT|PARTIAL_SETTLE|ESCALATE"},
+  {"name": "adjuster_comment", "type": "STRING",    "mode": "NULLABLE", "description": "Free-text comment from the adjuster"},
+  {"name": "created_at",       "type": "TIMESTAMP", "mode": "REQUIRED", "description": "UTC timestamp when the approval request was created"},
+  {"name": "decided_at",       "type": "TIMESTAMP", "mode": "NULLABLE", "description": "UTC timestamp when the adjuster submitted their decision"}
+]
