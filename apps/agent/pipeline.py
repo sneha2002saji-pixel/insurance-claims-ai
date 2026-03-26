@@ -12,15 +12,15 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
 
-from .agents import (
+from agents import (
     build_claim_validation_agent,
     build_decision_agent,
     build_document_verification_agent,
     build_fraud_detection_agent,
 )
-from .models.claim import AgentEventType, AgentStage, ClaimStatus
-from .services import bigquery_client as bq
-from .services.redis_client import publish_event
+from models.claim import AgentEventType, AgentStage, ClaimStatus
+from services import bigquery_client as bq
+from services.redis_client import publish_event
 
 logger = structlog.get_logger(__name__)
 

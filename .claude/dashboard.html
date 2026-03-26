@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insurance Claims AI — SDLC Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background: #0f172a; color: #e2e8f0; padding: 2rem; }
+    h1 { font-size: 1.75rem; color: #f8fafc; margin-bottom: 0.25rem; }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem; border: 1px solid #334155; }
+    .card h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+               color: #94a3b8; margin-bottom: 0.75rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+             font-size: 0.75rem; font-weight: 600; margin: 0.15rem; }
+    .badge-blue { background: #1d4ed8; color: #bfdbfe; }
+    .badge-green { background: #166534; color: #bbf7d0; }
+    .badge-yellow { background: #854d0e; color: #fef08a; }
+    .badge-red { background: #991b1b; color: #fecaca; }
+    .badge-gray { background: #374151; color: #d1d5db; }
+    .badge-purple { background: #5b21b6; color: #ede9fe; }
+    .stage-bar { height: 8px; border-radius: 999px; background: #334155; overflow: hidden; margin: 0.5rem 0; }
+    .stage-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+    .stat { display: flex; justify-content: space-between; align-items: center;
+            padding: 0.4rem 0; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+    .stat:last-child { border-bottom: none; }
+    .stat-value { font-weight: 700; color: #f1f5f9; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .timestamp { font-size: 0.75rem; color: #475569; margin-top: 2rem; text-align: right; }
+    .pipeline { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .pipeline-step { background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+                     padding: 0.4rem 0.75rem; font-size: 0.75rem; color: #94a3b8; }
+    .pipeline-step.done { border-color: #166534; color: #bbf7d0; }
+    .pipeline-step.active { border-color: #3b82f6; color: #bfdbfe; background: #1e3a5f; }
+    .pipeline-arrow { color: #475569; font-size: 0.7rem; }
+    .ticket-list { margin-top: 0.25rem; }
+    .ticket { display: flex; justify-content: space-between; align-items: center;
+              padding: 0.35rem 0; border-bottom: 1px solid #334155; font-size: 0.8rem; }
+    .ticket:last-child { border-bottom: none; }
+    .ticket-key { color: #60a5fa; font-family: monospace; font-size: 0.75rem; }
+    .ticket-title { color: #cbd5e1; flex: 1; margin: 0 0.5rem; overflow: hidden;
+                    text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <h1>Insurance Claims AI</h1>
+  <p class="subtitle">Generated 2026-03-26 &nbsp;|&nbsp; Next.js 15 + Python ADK + BigQuery + Redis &nbsp;|&nbsp; Harness CI/CD → Cloud Run</p>
+
+  <div class="grid">
+
+    <!-- SDLC Progress -->
+    <div class="card">
+      <h2>SDLC Progress</h2>
+      <div class="stat"><span>Stage Completed</span><span class="stat-value">3 / 10</span></div>
+      <div class="stage-bar"><div class="stage-fill" style="width: 35%"></div></div>
+      <div class="stat"><span>Started</span><span class="stat-value">2026-03-26</span></div>
+      <div class="stat"><span>Current Stage</span><span class="stat-value">4 — Development</span></div>
+      <div class="stat"><span>Status</span><span><span class="badge badge-blue">In Progress</span></span></div>
+    </div>
+
+    <!-- Stage Checklist -->
+    <div class="card">
+      <h2>Stage Checklist</h2>
+      <div class="stat"><span>✅ Stage 1 — Requirements</span><span class="badge badge-green">Done</span></div>
+      <div class="stat"><span>✅ Stage 2 — Architecture</span><span class="badge badge-green">Done</span></div>
+      <div class="stat"><span>✅ Stage 3 — Infrastructure</span><span class="badge badge-green">Done</span></div>
+      <div class="stat"><span>🔄 Stage 4 — Development</span><span class="badge badge-blue">Active</span></div>
+      <div class="stat"><span>⏳ Stage 5 — Testing</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>⏳ Stage 6 — Code Review</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>⏳ Stage 7 — CI/CD</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>⏳ Stage 8 — Docs</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>⏳ Stage 9 — Release</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>⏳ Stage 10 — Deploy</span><span class="badge badge-gray">Pending</span></div>
+    </div>
+
+    <!-- Links -->
+    <div class="card">
+      <h2>Links</h2>
+      <div class="stat"><span>GitHub Repo</span><span style="color:#475569">TBD (Stage 4)</span></div>
+      <div class="stat"><span>Service URL</span><span style="color:#475569">TBD (Stage 10)</span></div>
+      <div class="stat"><span>Confluence HLD</span><a href="https://bfsi-na-ai-engineering.atlassian.net/wiki/spaces/SCRUM1/pages/21430276" target="_blank">Open HLD ↗</a></div>
+      <div class="stat"><span>Jira Board</span><a href="https://bfsi-na-ai-engineering.atlassian.net/jira/software/projects/SCRUM/boards" target="_blank">SCRUM Board ↗</a></div>
+      <div class="stat"><span>GCP Project</span><span class="stat-value" style="font-size:0.75rem">upbeat-repeater-477110-q6</span></div>
+    </div>
+
+    <!-- Jira Tickets -->
+    <div class="card">
+      <h2>Jira Tickets — insurance-claims-ai</h2>
+      <div class="stat"><span>To Do</span><span class="stat-value">7</span></div>
+      <div class="stat"><span>In Progress</span><span class="stat-value">0</span></div>
+      <div class="stat"><span>In Review</span><span class="stat-value">0</span></div>
+      <div class="stat"><span>Done</span><span class="stat-value">0</span></div>
+      <div class="stat"><span>Bugs Open</span><span class="stat-value">0</span></div>
+      <div class="stat"><span>Total Stories</span><span class="stat-value">7 (42 pts)</span></div>
+    </div>
+
+    <!-- Ticket List -->
+    <div class="card">
+      <h2>Story Tickets</h2>
+      <div class="ticket-list">
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-95</span>
+          <span class="ticket-title">Submit Insurance Claim</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-96</span>
+          <span class="ticket-title">Agentic Claims Processing Pipeline</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-97</span>
+          <span class="ticket-title">Real-time Agent Thinking Feed</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-98</span>
+          <span class="ticket-title">Human-in-the-Loop (HITL) Review</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-99</span>
+          <span class="ticket-title">Claims Dashboard</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-100</span>
+          <span class="ticket-title">Fraud Detection Agent</span>
+          <span class="badge badge-gray">To Do</span>
+        </div>
+        <div class="ticket">
+          <span class="ticket-key">SCRUM-101</span>
+          <span class="ticket-title">Multi-Claim-Type Support</span>
+          <span class="badge badge-yellow">P1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Pipeline -->
+    <div class="card">
+      <h2>Agent Pipeline</h2>
+      <div class="pipeline">
+        <div class="pipeline-step">DocumentVerification<br><span style="font-size:0.65rem;color:#64748b">gemini-2.5-flash</span></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">FraudDetection<br><span style="font-size:0.65rem;color:#64748b">gemini-2.5-flash</span></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">ClaimValidation<br><span style="font-size:0.65rem;color:#64748b">gemini-2.5-pro</span></div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">Decision<br><span style="font-size:0.65rem;color:#64748b">gemini-2.5-pro</span></div>
+      </div>
+      <div style="margin-top:0.75rem;font-size:0.75rem;color:#64748b;">
+        HITL triggers: amount &gt; $10k <strong>OR</strong> fraud score ≥ 0.7
+      </div>
+      <div style="margin-top:0.5rem;">
+        <span class="badge badge-blue">AUTO</span>
+        <span class="badge badge-green">HEALTH</span>
+        <span class="badge badge-yellow">PROPERTY</span>
+      </div>
+    </div>
+
+    <!-- Pending Work -->
+    <div class="card">
+      <h2>Pending Work</h2>
+      <div class="stat"><span>• 4a Monorepo scaffold</span><span class="badge badge-blue">Active</span></div>
+      <div class="stat"><span>• 4b Shared TypeScript types</span><span class="badge badge-gray">Next</span></div>
+      <div class="stat"><span>• 4c Python Pydantic models</span><span class="badge badge-gray">Next</span></div>
+      <div class="stat"><span>• 4d Agent pipeline (all 4 agents)</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>• 4e UI components</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>• 4f Next.js pages</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>• 4g Integration wiring</span><span class="badge badge-gray">Pending</span></div>
+      <div class="stat"><span>• Push to GitHub</span><span class="badge badge-gray">Pending</span></div>
+    </div>
+
+    <!-- Known Issues -->
+    <div class="card">
+      <h2>Known Issues</h2>
+      <div class="stat"><span style="color:#475569">None recorded yet</span></div>
+      <div style="margin-top:0.75rem;font-size:0.75rem;color:#475569;">
+        Lessons from LoanScreen AI (in global memory):<br>
+        • SHORT_SHA required for manual Cloud Build triggers<br>
+        • BQ table/column names must exactly match code<br>
+        • Artifact Registry repo must exist before first build
+      </div>
+    </div>
+
+  </div>
+  <p class="timestamp">Dashboard generated by Claude Code SDLC Assistant · 2026-03-26</p>
+</body>
+</html>

@@ -11,10 +11,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from .models.claim import AgentEventType, ClaimStatus, CreateClaimRequest, HumanApprovalPayload
-from .pipeline import run_pipeline
-from .services import bigquery_client as bq
-from .services.redis_client import subscribe_events
+from models.claim import AgentEventType, ClaimStatus, CreateClaimRequest, HumanApprovalPayload
+from pipeline import run_pipeline
+from services import bigquery_client as bq
+from services.redis_client import subscribe_events
 
 logger = structlog.get_logger(__name__)
 
