@@ -1,7 +1,36 @@
 """Shared pytest fixtures for the insurance agent test suite."""
 from __future__ import annotations
 
+import sys
+import types
+
 import pytest
+
+# ---------------------------------------------------------------------------
+# ADK compatibility shim
+#
+# The installed version of google-adk does not expose a top-level `tool`
+# decorator at google.adk.tools.tool.  The agent modules use `from
+# google.adk.tools import tool` which raises ImportError at collection time.
+# We inject a pass-through identity decorator before any agent module is
+# imported so the source files load without modification.
+# ---------------------------------------------------------------------------
+
+import google.adk.tools as _adk_tools  # noqa: E402
+
+if not hasattr(_adk_tools, "tool"):
+    def _tool_passthrough(fn):  # type: ignore[return]
+        """Identity decorator standing in for the missing ADK @tool."""
+        return fn
+
+    _adk_tools.tool = _tool_passthrough  # type: ignore[attr-defined]
+
+# Also patch the environment variables required by bigquery_client at import
+# time so that importing `main` (and transitively `services.bigquery_client`)
+# does not raise a KeyError on GCP_PROJECT_ID.
+import os as _os  # noqa: E402
+
+_os.environ.setdefault("GCP_PROJECT_ID", "test-project")
 
 
 @pytest.fixture
