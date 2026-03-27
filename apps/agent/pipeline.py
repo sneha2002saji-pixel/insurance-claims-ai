@@ -212,19 +212,11 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
     """
     session_service = InMemorySessionService()
     session_id = f"claim-{claim_id}"
-
-    # Transition to under_review
-    await bq.update_claim_status(claim_id, ClaimStatus.UNDER_REVIEW.value)
-    await bq.insert_audit_log({
-        "id": str(uuid.uuid4()),
-        "claim_id": claim_id,
-        "event_type": "pipeline_started",
-        "previous_status": ClaimStatus.PENDING.value,
-        "new_status": ClaimStatus.UNDER_REVIEW.value,
-        "actor": USER_ID,
-        "details_json": json.dumps({"trigger": "api_request"}),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
+    await session_service.create_session(
+        app_name=APP_NAME,
+        user_id=USER_ID,
+        session_id=session_id,
+    )
 
     # Resolve document_refs — stored as JSON string in BQ or as a list directly
     raw_refs = claim_data.get("document_refs", "[]")
@@ -243,6 +235,19 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
     )
 
     try:
+        # Transition to under_review — inside try so BQ failures publish ERROR
+        # event to Redis instead of leaving the SSE stream hanging.
+        await bq.update_claim_status(claim_id, ClaimStatus.UNDER_REVIEW.value)
+        await bq.insert_audit_log({
+            "id": str(uuid.uuid4()),
+            "claim_id": claim_id,
+            "event_type": "pipeline_started",
+            "previous_status": ClaimStatus.PENDING.value,
+            "new_status": ClaimStatus.UNDER_REVIEW.value,
+            "actor": USER_ID,
+            "details_json": json.dumps({"trigger": "api_request"}),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
         # ── Stage 1: Document Verification ─────────────────────────────────
         doc_runner = Runner(
             agent=build_document_verification_agent(),
@@ -270,7 +275,7 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
             AgentStage.FRAUD_DETECTION,
             (
                 f"Analyse this claim for fraud indicators:\n\n{claim_context}\n\n"
-                f"Document verification authenticity flags: {authenticity_flags}\n"
+                f"Document verification authenticity flags: {json.dumps(authenticity_flags)}\n"
                 f"has_authenticity_flags: {bool(authenticity_flags)}"
             ),
             claim_id,
@@ -376,11 +381,12 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
 
             await bq.update_claim_status(claim_id, final_status.value)
 
-            event_type_str = (
-                "claim_settled"
-                if final_status == ClaimStatus.AGENT_APPROVED
-                else "claim_rejected"
-            )
+            if final_status == ClaimStatus.AGENT_APPROVED:
+                event_type_str = "claim_settled"
+            elif final_status == ClaimStatus.PARTIAL_SETTLEMENT:
+                event_type_str = "claim_partial_settlement"
+            else:
+                event_type_str = "claim_rejected"
             await bq.insert_audit_log({
                 "id": str(uuid.uuid4()),
                 "claim_id": claim_id,

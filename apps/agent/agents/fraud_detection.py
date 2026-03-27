@@ -5,12 +5,10 @@ from typing import Any
 
 import structlog
 from google.adk.agents import Agent
-from google.adk.tools import tool
 
 logger = structlog.get_logger(__name__)
 
 
-@tool
 def analyze_claim_patterns(
     claim_type: str,
     amount: float,
@@ -61,7 +59,6 @@ def analyze_claim_patterns(
     }
 
 
-@tool
 def calculate_fraud_risk_score(
     flag_count: int,
     claim_amount: float,

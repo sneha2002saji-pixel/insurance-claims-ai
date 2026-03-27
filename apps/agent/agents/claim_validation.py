@@ -4,7 +4,6 @@ from typing import Any
 
 import structlog
 from google.adk.agents import Agent
-from google.adk.tools import tool
 
 logger = structlog.get_logger(__name__)
 
@@ -16,7 +15,6 @@ COVERAGE_LIMITS: dict[str, dict[str, float]] = {
 }
 
 
-@tool
 def validate_against_policy(
     claim_type: str,
     amount: float,
@@ -65,7 +63,6 @@ def validate_against_policy(
     }
 
 
-@tool
 def validate_claim_type_specifics(
     claim_type: str,
     incident_description: str,

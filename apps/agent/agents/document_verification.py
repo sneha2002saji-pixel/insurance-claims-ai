@@ -4,7 +4,6 @@ from typing import Any
 
 import structlog
 from google.adk.agents import Agent
-from google.adk.tools import tool
 
 logger = structlog.get_logger(__name__)
 
@@ -16,7 +15,6 @@ REQUIRED_DOCS: dict[str, list[str]] = {
 }
 
 
-@tool
 def check_required_documents(claim_type: str, submitted_docs: list[str]) -> dict[str, Any]:
     """Check if all required documents for the claim type have been submitted.
 
@@ -39,7 +37,6 @@ def check_required_documents(claim_type: str, submitted_docs: list[str]) -> dict
     }
 
 
-@tool
 def flag_authenticity_issues(
     incident_description: str,
     claim_type: str,

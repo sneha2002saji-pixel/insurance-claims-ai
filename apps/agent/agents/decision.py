@@ -4,7 +4,6 @@ from typing import Any
 
 import structlog
 from google.adk.agents import Agent
-from google.adk.tools import tool
 
 logger = structlog.get_logger(__name__)
 
@@ -13,7 +12,6 @@ HITL_AMOUNT_THRESHOLD: float = 10_000.0
 HITL_FRAUD_THRESHOLD: float = 0.7
 
 
-@tool
 def evaluate_hitl_trigger(amount: float, fraud_score: float) -> dict[str, Any]:
     """Determine whether this claim requires human review before a decision is made.
 
@@ -51,7 +49,6 @@ def evaluate_hitl_trigger(amount: float, fraud_score: float) -> dict[str, Any]:
     }
 
 
-@tool
 def make_claim_decision(
     claim_valid: bool,
     within_coverage: bool,
