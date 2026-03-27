@@ -31,7 +31,6 @@ export function ClaimDetailClient({ claim: initialClaim }: ClaimDetailClientProp
     setEvents([])
 
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
-    let terminated = false
 
     try {
       const res = await fetch(`/api/claims/${claim.id}/run`, { method: 'POST' })
@@ -62,7 +61,6 @@ export function ClaimDetailClient({ claim: initialClaim }: ClaimDetailClientProp
                 evt.type === 'hitl_required' ||
                 evt.type === 'error'
               ) {
-                terminated = true
                 // Refresh server component to get the updated claim status
                 router.refresh()
                 return
@@ -76,10 +74,8 @@ export function ClaimDetailClient({ claim: initialClaim }: ClaimDetailClientProp
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      // Cancel the reader if we exited before natural stream end (terminal event or error)
-      if (reader && terminated) {
-        reader.cancel().catch(() => undefined)
-      }
+      // Cancel unconditionally — no-ops if the stream already reached natural end
+      reader?.cancel().catch(() => undefined)
       setIsStreaming(false)
     }
   }, [claim.id, router])

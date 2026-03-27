@@ -98,20 +98,47 @@ async def list_claims(limit: int = 20) -> list[dict[str, Any]]:
 
 
 async def insert_claim(claim: dict[str, Any]) -> None:
-    """Insert a new claim row via streaming insert.
+    """Insert a new claim row via DML INSERT.
+
+    Uses DML (not streaming insert) so that subsequent UPDATE statements on the
+    same row are immediately visible — BigQuery streaming buffer is not visible
+    to DML queries until the buffer is flushed (up to 90 minutes).
 
     Args:
         claim: Dict matching the insurance_claims table schema.
 
     Raises:
-        RuntimeError: If BigQuery returns insertion errors.
+        RuntimeError: If the DML job fails.
     """
     client = _client()
-    errors = await asyncio.to_thread(
-        lambda: client.insert_rows_json(_table("insurance_claims"), [claim])
+    query = f"""
+        INSERT INTO `{_table('insurance_claims')}`
+          (id, claim_type, claimant_name, policy_number, amount,
+           incident_description, document_refs, status, created_at, updated_at)
+        VALUES
+          (@id, @claim_type, @claimant_name, @policy_number, @amount,
+           @incident_description, @document_refs, @status, @created_at, @updated_at)
+    """
+    config = _job_config(
+        [
+            bigquery.ScalarQueryParameter("id", "STRING", claim["id"]),
+            bigquery.ScalarQueryParameter("claim_type", "STRING", claim["claim_type"]),
+            bigquery.ScalarQueryParameter("claimant_name", "STRING", claim["claimant_name"]),
+            bigquery.ScalarQueryParameter("policy_number", "STRING", claim["policy_number"]),
+            bigquery.ScalarQueryParameter("amount", "FLOAT64", float(claim["amount"])),
+            bigquery.ScalarQueryParameter(
+                "incident_description", "STRING", claim["incident_description"]
+            ),
+            bigquery.ScalarQueryParameter("document_refs", "STRING", claim["document_refs"]),
+            bigquery.ScalarQueryParameter("status", "STRING", claim["status"]),
+            bigquery.ScalarQueryParameter("created_at", "TIMESTAMP", claim["created_at"]),
+            bigquery.ScalarQueryParameter("updated_at", "TIMESTAMP", claim["updated_at"]),
+        ],
+        stage="insert_claim",
     )
-    if errors:
-        raise RuntimeError(f"BigQuery insert errors: {errors}")
+    await asyncio.to_thread(
+        lambda: client.query(query, job_config=config).result()
+    )
     logger.info("claim_inserted", claim_id=claim.get("id"))
 
 
@@ -149,6 +176,9 @@ async def update_claim_status(claim_id: str, new_status: str) -> None:
 
 async def insert_agent_analysis(analysis: dict[str, Any]) -> None:
     """Insert an agent analysis result via streaming insert.
+
+    agent_analyses is append-only — streaming inserts are appropriate here
+    since there are no subsequent DML UPDATE operations on these rows.
 
     Args:
         analysis: Dict matching the agent_analyses table schema.
@@ -188,20 +218,48 @@ async def insert_audit_log(entry: dict[str, Any]) -> None:
 
 
 async def insert_hitl_request(request: dict[str, Any]) -> None:
-    """Insert a human approval request via streaming insert.
+    """Insert a human approval request via DML INSERT.
+
+    Uses DML (not streaming insert) so that the subsequent DML UPDATE in
+    update_hitl_decision can immediately see the row. Streaming inserts have a
+    buffer delay of up to 90 minutes before they become visible to DML queries.
 
     Args:
         request: Dict matching the human_approval_requests table schema.
 
     Raises:
-        RuntimeError: If BigQuery returns insertion errors.
+        RuntimeError: If the DML job fails.
     """
     client = _client()
-    errors = await asyncio.to_thread(
-        lambda: client.insert_rows_json(_table("human_approval_requests"), [request])
+    query = f"""
+        INSERT INTO `{_table('human_approval_requests')}`
+          (id, claim_id, trigger_reason, fraud_score, amount,
+           interrupt_payload, created_at)
+        VALUES
+          (@id, @claim_id, @trigger_reason, @fraud_score, @amount,
+           @interrupt_payload, @created_at)
+    """
+    config = _job_config(
+        [
+            bigquery.ScalarQueryParameter("id", "STRING", request["id"]),
+            bigquery.ScalarQueryParameter("claim_id", "STRING", request["claim_id"]),
+            bigquery.ScalarQueryParameter(
+                "trigger_reason", "STRING", request["trigger_reason"]
+            ),
+            bigquery.ScalarQueryParameter(
+                "fraud_score", "FLOAT64", float(request["fraud_score"])
+            ),
+            bigquery.ScalarQueryParameter("amount", "FLOAT64", float(request["amount"])),
+            bigquery.ScalarQueryParameter(
+                "interrupt_payload", "STRING", request["interrupt_payload"]
+            ),
+            bigquery.ScalarQueryParameter("created_at", "TIMESTAMP", request["created_at"]),
+        ],
+        stage="insert_hitl",
     )
-    if errors:
-        raise RuntimeError(f"BigQuery insert errors: {errors}")
+    await asyncio.to_thread(
+        lambda: client.query(query, job_config=config).result()
+    )
     logger.info("hitl_request_inserted", claim_id=request.get("claim_id"))
 
 

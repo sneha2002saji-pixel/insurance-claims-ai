@@ -175,8 +175,12 @@ async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
             # Wait briefly for the pipeline task to flush final BQ writes
             try:
                 await asyncio.wait_for(pipeline_task, timeout=10.0)
-            except (asyncio.TimeoutError, Exception):
-                pass
+            except asyncio.TimeoutError:
+                logger.warning("pipeline_task_timeout", claim_id=claim_id)
+            except Exception as exc:  # noqa: BLE001
+                # Pipeline already published an ERROR event to Redis; log here
+                # so the exception is visible in Cloud Run logs.
+                logger.error("pipeline_task_error", claim_id=claim_id, exc_info=exc)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

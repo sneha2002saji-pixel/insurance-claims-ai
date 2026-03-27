@@ -1,0 +1,174 @@
+pipeline:
+  name: insurance-claims-ai
+  identifier: insurance_claims_ai
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags:
+    app: insurance-claims-ai
+
+  variables:
+    - name: GCP_PROJECT_ID
+      type: String
+      default: upbeat-repeater-477110-q6
+    - name: REGION
+      type: String
+      default: us-central1
+    - name: REGISTRY
+      type: String
+      default: us-central1-docker.pkg.dev/upbeat-repeater-477110-q6/insurance-claims-ai
+
+  stages:
+    # ── Stage 1: Build & push agent image ─────────────────────────────────────
+    - stage:
+        name: Build Agent
+        identifier: build_agent
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  name: Build and push agent image
+                  identifier: build_push_agent
+                  type: BuildAndPushGAR
+                  spec:
+                    connectorRef: gcp_connector
+                    host: us-central1-docker.pkg.dev
+                    projectID: <+pipeline.variables.GCP_PROJECT_ID>
+                    imageName: insurance-claims-ai/agent
+                    tags:
+                      - <+pipeline.sequenceId>
+                      - latest
+                    context: apps/agent
+                    dockerfile: apps/agent/Dockerfile
+
+    # ── Stage 2: Build & push web image ───────────────────────────────────────
+    - stage:
+        name: Build Web
+        identifier: build_web
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  name: Build and push web image
+                  identifier: build_push_web
+                  type: BuildAndPushGAR
+                  spec:
+                    connectorRef: gcp_connector
+                    host: us-central1-docker.pkg.dev
+                    projectID: <+pipeline.variables.GCP_PROJECT_ID>
+                    imageName: insurance-claims-ai/web
+                    tags:
+                      - <+pipeline.sequenceId>
+                      - latest
+                    context: .
+                    dockerfile: apps/web/Dockerfile
+
+    # ── Stage 3: Deploy agent to Cloud Run ────────────────────────────────────
+    - stage:
+        name: Deploy Agent
+        identifier: deploy_agent
+        type: Deployment
+        spec:
+          deploymentType: CustomDeployment
+          service:
+            serviceRef: insurance_agent
+          environment:
+            environmentRef: production
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: insurance_agent_cloudrun
+          execution:
+            steps:
+              - step:
+                  name: Deploy agent to Cloud Run
+                  identifier: deploy_agent_cloudrun
+                  type: ShellScript
+                  spec:
+                    shell: Bash
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          gcloud run deploy insurance-agent \
+                            --image=<+pipeline.variables.REGISTRY>/agent:<+pipeline.sequenceId> \
+                            --region=<+pipeline.variables.REGION> \
+                            --project=<+pipeline.variables.GCP_PROJECT_ID> \
+                            --platform=managed \
+                            --no-allow-unauthenticated \
+                            --service-account=insurance-agent-sa@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
+                            --set-secrets="GCP_PROJECT_ID=insurance-gcp-project-id:latest,REDIS_URL=insurance-redis-url:latest,ALLOWED_ORIGINS=insurance-allowed-origins:latest" \
+                            --memory=1Gi \
+                            --cpu=1 \
+                            --min-instances=0 \
+                            --max-instances=5 \
+                            --port=8000
+                    onDelegate: false
+                    environmentVariables:
+                      - name: GOOGLE_APPLICATION_CREDENTIALS
+                        value: <+secrets.getValue("gcp_sa_key")>
+                        type: String
+
+    # ── Stage 4: Deploy web to Cloud Run ──────────────────────────────────────
+    - stage:
+        name: Deploy Web
+        identifier: deploy_web
+        type: Deployment
+        spec:
+          deploymentType: CustomDeployment
+          service:
+            serviceRef: insurance_web
+          environment:
+            environmentRef: production
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: insurance_web_cloudrun
+          execution:
+            steps:
+              - step:
+                  name: Deploy web to Cloud Run
+                  identifier: deploy_web_cloudrun
+                  type: ShellScript
+                  spec:
+                    shell: Bash
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          AGENT_URL=$(gcloud run services describe insurance-agent \
+                            --region=<+pipeline.variables.REGION> \
+                            --project=<+pipeline.variables.GCP_PROJECT_ID> \
+                            --format="value(status.url)")
+
+                          gcloud run deploy insurance-web \
+                            --image=<+pipeline.variables.REGISTRY>/web:<+pipeline.sequenceId> \
+                            --region=<+pipeline.variables.REGION> \
+                            --project=<+pipeline.variables.GCP_PROJECT_ID> \
+                            --platform=managed \
+                            --allow-unauthenticated \
+                            --service-account=insurance-web-sa@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
+                            --set-env-vars="AGENT_SERVICE_URL=${AGENT_URL}" \
+                            --memory=512Mi \
+                            --cpu=1 \
+                            --min-instances=0 \
+                            --max-instances=3 \
+                            --port=3000
+                    onDelegate: false
+                    environmentVariables:
+                      - name: GOOGLE_APPLICATION_CREDENTIALS
+                        value: <+secrets.getValue("gcp_sa_key")>
+                        type: String
