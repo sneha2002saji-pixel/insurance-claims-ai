@@ -311,7 +311,15 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
         )
 
         # ── Handle HITL or Final Decision ──────────────────────────────────
-        if dec_result.get("hitl_required"):
+        # Deterministic guard: enforce HITL policy in Python regardless of LLM output.
+        # The LLM may also set hitl_required=true for other reasons it detects.
+        amount = float(claim_data["amount"])
+        hitl_triggered = (
+            bool(dec_result.get("hitl_required"))
+            or amount > 10_000
+            or fraud_score >= 0.7
+        )
+        if hitl_triggered:
             trigger_reason = dec_result.get("trigger_reason") or "high_amount"
             await bq.update_claim_status(
                 claim_id, ClaimStatus.AWAITING_HUMAN_APPROVAL.value
@@ -321,7 +329,7 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
                 "claim_id": claim_id,
                 "trigger_reason": trigger_reason,
                 "fraud_score": fraud_score,
-                "amount": float(claim_data["amount"]),
+                "amount": amount,
                 "interrupt_payload": json.dumps({
                     "document_verification": doc_result,
                     "fraud_detection": fraud_result,

@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 from models.claim import AgentEventType, ClaimStatus, CreateClaimRequest, HumanApprovalPayload
 from pipeline import run_pipeline
 from services import bigquery_client as bq
-from services.redis_client import subscribe_events
+from services.redis_client import create_subscription, yield_events
 
 logger = structlog.get_logger(__name__)
 
@@ -159,22 +159,24 @@ async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
 
     async def event_stream():
         """Yield SSE-formatted event lines until the pipeline finishes."""
-        # Subscribe BEFORE starting the pipeline to avoid missing early events
-        redis_gen = subscribe_events(claim_id)
-        # Prime the generator (establishes subscription) before pipeline starts
+        # create_subscription is a plain coroutine — it establishes the Redis
+        # subscription immediately (before create_task), so no early events
+        # published by the pipeline can be missed.
+        redis_client, pubsub = await create_subscription(claim_id)
         pipeline_task = asyncio.create_task(run_pipeline(claim_id, claim))
-        # Yield one tick to let the subscribe coroutine register with Redis
-        await asyncio.sleep(0)
 
         try:
-            async for event in redis_gen:
+            async for event in yield_events(redis_client, pubsub, claim_id):
                 yield f"data: {json.dumps(event)}\n\n"
                 if event.get("type") in _terminal_types:
                     break
         finally:
             # Wait briefly for the pipeline task to flush final BQ writes
             try:
-                await asyncio.wait_for(pipeline_task, timeout=10.0)
+                # shield prevents the pipeline task from being cancelled if the
+                # client disconnects and FastAPI propagates CancelledError here,
+                # ensuring final BQ writes and audit log entries always complete.
+                await asyncio.wait_for(asyncio.shield(pipeline_task), timeout=10.0)
             except asyncio.TimeoutError:
                 logger.warning("pipeline_task_timeout", claim_id=claim_id)
             except Exception as exc:  # noqa: BLE001

@@ -6,6 +6,7 @@ from typing import Any, AsyncIterator
 
 import structlog
 import redis.asyncio as aioredis
+from redis.asyncio.client import PubSub, Redis
 
 logger = structlog.get_logger(__name__)
 
@@ -44,18 +45,20 @@ async def publish_event(claim_id: str, event: dict[str, Any]) -> None:
         await client.aclose()
 
 
-async def subscribe_events(claim_id: str) -> AsyncIterator[dict]:
-    """Subscribe to agent events for a claim and yield parsed event dicts.
+async def create_subscription(claim_id: str) -> tuple[Redis, PubSub]:
+    """Eagerly establish a Redis pub/sub subscription before the pipeline starts.
 
-    This is an async generator intended for use in Server-Sent Event (SSE)
-    route handlers. The subscription is cleaned up automatically when the
-    generator is exhausted or closed by the caller.
+    Unlike an async generator, this coroutine executes immediately on await,
+    so the subscription is live before the pipeline task is created. This
+    eliminates the race where early pipeline events are published before the
+    generator has a chance to call pubsub.subscribe().
 
     Args:
         claim_id: UUID of the claim to subscribe to.
 
-    Yields:
-        Parsed event dicts. Malformed JSON messages are skipped with a warning.
+    Returns:
+        Tuple of (redis_client, pubsub). Ownership is transferred to the
+        caller; use yield_events() to consume events and close both.
 
     Raises:
         redis.exceptions.RedisError: On connection failure.
@@ -64,6 +67,27 @@ async def subscribe_events(claim_id: str) -> AsyncIterator[dict]:
     pubsub = client.pubsub()
     await pubsub.subscribe(_channel(claim_id))
     logger.info("subscribed_to_claim_events", claim_id=claim_id)
+    return client, pubsub
+
+
+async def yield_events(
+    client: Redis,
+    pubsub: PubSub,
+    claim_id: str,
+) -> AsyncIterator[dict[str, Any]]:
+    """Yield parsed event dicts from an already-subscribed pubsub.
+
+    Cleans up the subscription and closes the client in its finally block,
+    so the caller does not need to manage them separately.
+
+    Args:
+        client: Redis client returned by create_subscription.
+        pubsub: Already-subscribed PubSub object from create_subscription.
+        claim_id: UUID of the claim (used for logging and unsubscribe).
+
+    Yields:
+        Parsed event dicts. Malformed JSON messages are skipped with a warning.
+    """
     try:
         async for message in pubsub.listen():
             if message["type"] == "message":

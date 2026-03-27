@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 import structlog
@@ -49,8 +50,9 @@ def analyze_claim_patterns(
     if amount > 10_000 and len(desc_lower.split()) < 20:
         risk_indicators.append("Inadequate description for high-value claim")
 
-    # Large claim on a policy issued in 2024 (recently opened)
-    if amount > 8_000 and "2024" in policy_number:
+    # Large claim on a policy issued in the current year (recently opened)
+    current_year = str(datetime.now(timezone.utc).year)
+    if amount > 8_000 and current_year in policy_number:
         risk_indicators.append("Large claim on recently issued policy")
 
     return {
