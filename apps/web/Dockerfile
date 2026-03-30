@@ -22,6 +22,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY packages/shared-types/ ./packages/shared-types/
 COPY apps/web/ ./apps/web/
 
+# Symlink workspace node_modules into apps/web so Next.js 16 Turbopack
+# can resolve packages (e.g. next/package.json) from the app subdirectory
+RUN ln -s /app/node_modules /app/apps/web/node_modules
+
 WORKDIR /app/apps/web
 
 ENV NEXT_TELEMETRY_DISABLED=1
