@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { InsuranceClaim, ClaimType, ClaimStatus } from '@insurance/shared-types'
 import { STATUS_LABELS } from '@insurance/shared-types'
@@ -45,18 +45,22 @@ export function ClaimCard({ claim }: ClaimCardProps) {
 
   const canDelete = DELETABLE_STATUSES.includes(claim.status)
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (!confirm(`Delete claim for ${claim.claimant_name}? This cannot be undone.`)) return
     setDeleting(true)
     try {
-      await fetch(`/api/claims/${claim.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/claims/${claim.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        alert('Failed to delete claim. It may have already been processed.')
+        return
+      }
       router.refresh()
     } finally {
       setDeleting(false)
     }
-  }
+  }, [claim.id, claim.claimant_name, router])
 
   return (
     <Link href={`/claims/${claim.id}`}>

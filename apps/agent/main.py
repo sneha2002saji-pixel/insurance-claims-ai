@@ -175,7 +175,7 @@ async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
 
     Raises:
         HTTPException 404: Claim not found.
-        HTTPException 409: Claim is not in PENDING status.
+        HTTPException 409: Claim is in a terminal status (pending and under_review are retryable).
     """
     claim = await bq.get_claim(claim_id)
     if not claim:
