@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { InsuranceClaim, ClaimType, ClaimStatus } from '@insurance/shared-types'
 import { STATUS_LABELS } from '@insurance/shared-types'
 
@@ -20,11 +22,16 @@ const STATUS_BADGE_CLASSES: Record<ClaimStatus, string> = {
   settled: 'bg-emerald-500/20 text-emerald-400',
 }
 
+const DELETABLE_STATUSES: ClaimStatus[] = ['pending', 'under_review']
+
 interface ClaimCardProps {
   claim: InsuranceClaim
 }
 
 export function ClaimCard({ claim }: ClaimCardProps) {
+  const router = useRouter()
+  const [deleting, setDeleting] = useState(false)
+
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -36,9 +43,37 @@ export function ClaimCard({ claim }: ClaimCardProps) {
     year: 'numeric',
   })
 
+  const canDelete = DELETABLE_STATUSES.includes(claim.status)
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Delete claim for ${claim.claimant_name}? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/claims/${claim.id}`, { method: 'DELETE' })
+      router.refresh()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <Link href={`/claims/${claim.id}`}>
-      <div className="group bg-slate-800/50 border border-slate-700 rounded-xl p-5 hover:border-slate-500 hover:bg-slate-800 transition-all duration-200 cursor-pointer">
+      <div className="group relative bg-slate-800/50 border border-slate-700 rounded-xl p-5 hover:border-slate-500 hover:bg-slate-800 transition-all duration-200 cursor-pointer">
+        {/* Delete button — only for deletable statuses */}
+        {canDelete && (
+          <button
+            type="button"
+            onClick={e => void handleDelete(e)}
+            disabled={deleting}
+            aria-label="Delete claim"
+            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md bg-slate-700 hover:bg-red-500/30 text-slate-400 hover:text-red-400 transition-all flex items-center justify-center text-xs disabled:opacity-50"
+          >
+            ✕
+          </button>
+        )}
+
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <span
