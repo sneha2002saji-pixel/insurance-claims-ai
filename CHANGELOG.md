@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.1] - 2026-03-30
+
+### Fixed
+- DELETE endpoint restricted to `pending` claims only — prevents orphaning in-flight pipeline tasks
+- SSE stream: `yield_events()` applies per-message `asyncio.wait_for` timeout (300 s)
+- Pipeline audit log `previous_status` now reflects actual status on retry path
+- HITL `trigger_reason` derived from Python conditions, not LLM output
+- Conservative `fraud_score=0.5` fallback on LLM parse failure
+- CORS `allow_headers` tightened to explicit allowlist
+- `CreateClaimRequest` fields enforce `max_length`/`max_items` constraints
+- Web: `/api/claims/[id]/approve` validates `decision` before forwarding
+- Web: GET `/api/claims/[id]` returns 502 for non-404 upstream errors
+- Web: retry button restricted to `pending` claims; advisory banner for `under_review`
+- Web: `under_review` removed from deletable statuses; inline delete error
+
 ## [0.1.0] - 2026-03-27
 
 ### Added
