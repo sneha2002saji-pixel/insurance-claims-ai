@@ -23,9 +23,15 @@ export async function GET(
   try {
     const res = await fetch(`${AGENT_URL}/claims/${id}`, { cache: 'no-store' })
     if (!res.ok) {
+      if (res.status === 404) {
+        return NextResponse.json(
+          { error: { code: 'NOT_FOUND', message: 'Claim not found' } },
+          { status: 404 },
+        )
+      }
       return NextResponse.json(
-        { error: { code: 'NOT_FOUND', message: 'Claim not found' } },
-        { status: 404 },
+        { error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch claim' } },
+        { status: 502 },
       )
     }
     const data: unknown = await res.json()

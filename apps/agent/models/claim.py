@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -61,11 +61,14 @@ class CreateClaimRequest(BaseModel):
     """Validated payload for the POST /v1/claims endpoint."""
 
     claim_type: ClaimType
-    claimant_name: str
-    policy_number: str
-    amount: float = Field(gt=0)
-    incident_description: str
-    document_refs: list[str] = Field(default_factory=list)
+    claimant_name: str = Field(max_length=200)
+    policy_number: str = Field(max_length=200)
+    amount: float = Field(gt=0, le=999_999.99)
+    incident_description: str = Field(max_length=5000)
+    document_refs: list[Annotated[str, Field(max_length=200)]] = Field(
+        default_factory=list,
+        max_length=20,
+    )
 
 
 class AgentAnalysis(BaseModel):

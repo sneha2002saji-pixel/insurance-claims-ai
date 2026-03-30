@@ -14,10 +14,23 @@ export async function POST(
     )
   }
 
-  const agentRes = await fetch(`${AGENT_URL}/claims/${id}/run`, {
-    method: 'POST',
-    headers: { Accept: 'text/event-stream' },
-  })
+  let agentRes: Response
+  try {
+    agentRes = await fetch(`${AGENT_URL}/claims/${id}/run`, {
+      method: 'POST',
+      headers: { Accept: 'text/event-stream' },
+    })
+  } catch (err) {
+    if (err instanceof TypeError) {
+      return new Response(
+        JSON.stringify({
+          error: { code: 'UPSTREAM_UNREACHABLE', message: 'Agent service unavailable' },
+        }),
+        { status: 502, headers: { 'Content-Type': 'application/json' } },
+      )
+    }
+    throw err
+  }
 
   if (!agentRes.ok || !agentRes.body) {
     return new Response(

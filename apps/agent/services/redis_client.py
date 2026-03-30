@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from typing import Any, AsyncIterator
@@ -74,6 +75,7 @@ async def yield_events(
     client: Redis,
     pubsub: PubSub,
     claim_id: str,
+    timeout: float = 300.0,
 ) -> AsyncIterator[dict[str, Any]]:
     """Yield parsed event dicts from an already-subscribed pubsub.
 
@@ -84,12 +86,23 @@ async def yield_events(
         client: Redis client returned by create_subscription.
         pubsub: Already-subscribed PubSub object from create_subscription.
         claim_id: UUID of the claim (used for logging and unsubscribe).
+        timeout: Seconds to wait for the next message before raising
+            asyncio.TimeoutError. Prevents the stream from hanging forever
+            when the pipeline dies without publishing a terminal event.
 
     Yields:
         Parsed event dicts. Malformed JSON messages are skipped with a warning.
+
+    Raises:
+        asyncio.TimeoutError: If no message arrives within `timeout` seconds.
     """
     try:
-        async for message in pubsub.listen():
+        aiter = pubsub.listen().__aiter__()
+        while True:
+            try:
+                message = await asyncio.wait_for(aiter.__anext__(), timeout=timeout)
+            except StopAsyncIteration:
+                break
             if message["type"] == "message":
                 try:
                     yield json.loads(message["data"])

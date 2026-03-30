@@ -22,7 +22,7 @@ const STATUS_BADGE_CLASSES: Record<ClaimStatus, string> = {
   settled: 'bg-emerald-500/20 text-emerald-400',
 }
 
-const DELETABLE_STATUSES: ClaimStatus[] = ['pending', 'under_review']
+const DELETABLE_STATUSES: ClaimStatus[] = ['pending']
 
 interface ClaimCardProps {
   claim: InsuranceClaim
@@ -31,6 +31,7 @@ interface ClaimCardProps {
 export function ClaimCard({ claim }: ClaimCardProps) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -50,10 +51,11 @@ export function ClaimCard({ claim }: ClaimCardProps) {
     e.stopPropagation()
     if (!confirm(`Delete claim for ${claim.claimant_name}? This cannot be undone.`)) return
     setDeleting(true)
+    setDeleteError(null)
     try {
       const res = await fetch(`/api/claims/${claim.id}`, { method: 'DELETE' })
       if (!res.ok) {
-        alert('Failed to delete claim. It may have already been processed.')
+        setDeleteError('Failed to delete claim. It may have already been processed.')
         return
       }
       router.refresh()
@@ -107,6 +109,10 @@ export function ClaimCard({ claim }: ClaimCardProps) {
           <span className="text-2xl font-bold text-white">{formattedAmount}</span>
           <span className="text-slate-500 text-xs">{formattedDate}</span>
         </div>
+
+        {deleteError && (
+          <p className="mt-3 text-xs text-red-400">{deleteError}</p>
+        )}
       </div>
     </Link>
   )

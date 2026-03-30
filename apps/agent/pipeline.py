@@ -242,7 +242,7 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
             "id": str(uuid.uuid4()),
             "claim_id": claim_id,
             "event_type": "pipeline_started",
-            "previous_status": ClaimStatus.PENDING.value,
+            "previous_status": claim_data.get("status", ClaimStatus.PENDING.value),
             "new_status": ClaimStatus.UNDER_REVIEW.value,
             "actor": USER_ID,
             "details_json": json.dumps({"trigger": "api_request"}),
@@ -280,7 +280,11 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
             ),
             claim_id,
         )
-        fraud_score = float(fraud_result.get("fraud_score", 0.0))
+        if "raw_response" in fraud_result:
+            logger.warning("fraud_stage_parse_failure", claim_id=claim_id)
+            fraud_score = 0.5  # conservative: triggers HITL on parse failure
+        else:
+            fraud_score = float(fraud_result.get("fraud_score", 0.0))
 
         # ── Stage 3: Claim Validation ───────────────────────────────────────
         val_runner = Runner(
@@ -325,7 +329,14 @@ async def run_pipeline(claim_id: str, claim_data: dict[str, Any]) -> None:
             or fraud_score >= 0.7
         )
         if hitl_triggered:
-            trigger_reason = dec_result.get("trigger_reason") or "high_amount"
+            if amount > 10_000 and fraud_score >= 0.7:
+                trigger_reason = "both"
+            elif amount > 10_000:
+                trigger_reason = "high_amount"
+            elif fraud_score >= 0.7:
+                trigger_reason = "high_fraud_risk"
+            else:
+                trigger_reason = dec_result.get("trigger_reason") or "llm_flagged"
             await bq.update_claim_status(
                 claim_id, ClaimStatus.AWAITING_HUMAN_APPROVAL.value
             )

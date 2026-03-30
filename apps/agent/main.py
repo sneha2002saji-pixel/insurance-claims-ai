@@ -26,7 +26,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "Cache-Control"],
 )
 
 # Map HumanDecision string values to ClaimStatus string values.
@@ -46,6 +46,11 @@ _TERMINAL_STATUSES: frozenset[str] = frozenset({
     ClaimStatus.REJECTED.value,
     ClaimStatus.PARTIAL_SETTLEMENT.value,
     ClaimStatus.SETTLED.value,
+})
+
+# Only claims that have never been touched by the pipeline may be deleted.
+_DELETABLE_STATUSES: frozenset[str] = frozenset({
+    ClaimStatus.PENDING.value,
 })
 
 
@@ -150,10 +155,10 @@ async def delete_claim(claim_id: str) -> None:
     claim = await bq.get_claim(claim_id)
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
-    if claim["status"] in _TERMINAL_STATUSES:
+    if claim["status"] not in _DELETABLE_STATUSES:
         raise HTTPException(
             status_code=409,
-            detail="Cannot delete a claim that has been processed or is awaiting approval",
+            detail=f"Can only delete claims in pending status; current status: {claim['status']}",
         )
     await bq.delete_claim(claim_id)
 
@@ -202,10 +207,21 @@ async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
         pipeline_task = asyncio.create_task(run_pipeline(claim_id, claim))
 
         try:
+            # yield_events applies a 300 s per-message timeout internally.
+            # asyncio.TimeoutError propagates here if the pipeline hangs.
             async for event in yield_events(redis_client, pubsub, claim_id):
                 yield f"data: {json.dumps(event)}\n\n"
                 if event.get("type") in _terminal_types:
                     break
+            else:
+                # yield_events exhausted without a terminal event (should not
+                # happen in normal operation); emit a synthetic error event so
+                # the client is not left hanging.
+                logger.warning("sse_stream_exhausted", claim_id=claim_id)
+                yield f"data: {json.dumps({'type': 'error', 'data': {'message': 'Pipeline stream ended unexpectedly'}})}\n\n"
+        except asyncio.TimeoutError:
+            logger.warning("sse_stream_timeout", claim_id=claim_id)
+            yield f"data: {json.dumps({'type': 'error', 'data': {'message': 'Pipeline timed out'}})}\n\n"
         finally:
             # Wait briefly for the pipeline task to flush final BQ writes
             try:
