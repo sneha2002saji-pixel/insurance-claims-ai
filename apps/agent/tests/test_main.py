@@ -149,7 +149,7 @@ async def test_run_pipeline_claim_not_pending_returns_409(client: AsyncClient) -
     """POST /claims/{id}/run returns 409 when claim is not in pending status."""
     mock_claim = {
         "id": "claim-001",
-        "status": "under_review",
+        "status": "agent_approved",
         "amount": 3000.0,
     }
 
@@ -157,7 +157,7 @@ async def test_run_pipeline_claim_not_pending_returns_409(client: AsyncClient) -
         response = await client.post("/claims/claim-001/run")
 
     assert response.status_code == 409
-    assert "under_review" in response.json()["detail"]
+    assert "agent_approved" in response.json()["detail"]
 
 
 async def test_run_pipeline_claim_not_found_returns_404(client: AsyncClient) -> None:

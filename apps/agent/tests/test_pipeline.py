@@ -196,7 +196,7 @@ async def test_run_pipeline_auto_approve(
         patch("pipeline.build_fraud_detection_agent", return_value=MagicMock()),
         patch("pipeline.build_claim_validation_agent", return_value=MagicMock()),
         patch("pipeline.build_decision_agent", return_value=MagicMock()),
-        patch("pipeline.InMemorySessionService", return_value=MagicMock()),
+        patch("pipeline.InMemorySessionService", return_value=AsyncMock()),
     ):
         await run_pipeline(sample_claim["id"], sample_claim)
 
@@ -233,7 +233,7 @@ async def test_run_pipeline_hitl_trigger(
         patch("pipeline.build_fraud_detection_agent", return_value=MagicMock()),
         patch("pipeline.build_claim_validation_agent", return_value=MagicMock()),
         patch("pipeline.build_decision_agent", return_value=MagicMock()),
-        patch("pipeline.InMemorySessionService", return_value=MagicMock()),
+        patch("pipeline.InMemorySessionService", return_value=AsyncMock()),
     ):
         await run_pipeline(hitl_claim["id"], hitl_claim)
 
@@ -253,7 +253,7 @@ async def test_run_pipeline_fraud_rejection(
     """Fraud path: dec_result decision=rejected; status transitions to rejected."""
     runners = [
         _make_runner_mock(_doc_result()),
-        _make_runner_mock(_fraud_result(fraud_score=0.8)),
+        _make_runner_mock(_fraud_result(fraud_score=0.5)),
         _make_runner_mock(_val_result()),
         _make_runner_mock(_dec_result_rejected()),
     ]
@@ -269,7 +269,7 @@ async def test_run_pipeline_fraud_rejection(
         patch("pipeline.build_fraud_detection_agent", return_value=MagicMock()),
         patch("pipeline.build_claim_validation_agent", return_value=MagicMock()),
         patch("pipeline.build_decision_agent", return_value=MagicMock()),
-        patch("pipeline.InMemorySessionService", return_value=MagicMock()),
+        patch("pipeline.InMemorySessionService", return_value=AsyncMock()),
     ):
         await run_pipeline(fraud_claim["id"], fraud_claim)
 
@@ -309,7 +309,7 @@ async def test_run_pipeline_error_publishes_event(
         patch("pipeline.build_fraud_detection_agent", return_value=MagicMock()),
         patch("pipeline.build_claim_validation_agent", return_value=MagicMock()),
         patch("pipeline.build_decision_agent", return_value=MagicMock()),
-        patch("pipeline.InMemorySessionService", return_value=MagicMock()),
+        patch("pipeline.InMemorySessionService", return_value=AsyncMock()),
     ):
         with pytest.raises(RuntimeError, match="BQ write failed"):
             await run_pipeline(sample_claim["id"], sample_claim)
