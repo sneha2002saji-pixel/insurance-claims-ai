@@ -80,7 +80,7 @@ export function ClaimDetailClient({ claim: initialClaim }: ClaimDetailClientProp
     }
   }, [claim.id, router])
 
-  const canRunPipeline = claim.status === 'pending' && !pipelineStarted
+  const canRunPipeline = (claim.status === 'pending' || claim.status === 'under_review') && !pipelineStarted
 
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -141,12 +141,17 @@ export function ClaimDetailClient({ claim: initialClaim }: ClaimDetailClientProp
         </div>
 
         {/* Run pipeline button */}
+        {claim.status === 'under_review' && !pipelineStarted && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-yellow-400 text-sm">
+            Pipeline did not complete. Retry to re-run the AI analysis.
+          </div>
+        )}
         {canRunPipeline && (
           <button
             onClick={() => void runPipeline()}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
           >
-            Run AI Pipeline
+            {claim.status === 'under_review' ? 'Retry Pipeline' : 'Run AI Pipeline'}
           </button>
         )}
 

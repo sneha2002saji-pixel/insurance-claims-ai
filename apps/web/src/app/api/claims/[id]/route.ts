@@ -24,3 +24,28 @@ export async function GET(
     )
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const { id } = await params
+  try {
+    const res = await fetch(`${AGENT_URL}/claims/${id}`, {
+      method: 'DELETE',
+      cache: 'no-store',
+    })
+    if (!res.ok) {
+      const data: unknown = res.status === 404
+        ? { error: { code: 'NOT_FOUND', message: 'Claim not found' } }
+        : { error: { code: 'UPSTREAM_ERROR', message: 'Failed to delete claim' } }
+      return NextResponse.json(data, { status: res.status })
+    }
+    return new NextResponse(null, { status: 204 })
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
+      { status: 500 },
+    )
+  }
+}

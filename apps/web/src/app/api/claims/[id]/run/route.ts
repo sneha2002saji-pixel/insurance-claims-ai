@@ -17,7 +17,6 @@ export async function POST(
   const agentRes = await fetch(`${AGENT_URL}/claims/${id}/run`, {
     method: 'POST',
     headers: { Accept: 'text/event-stream' },
-    signal: AbortSignal.timeout(30_000),
   })
 
   if (!agentRes.ok || !agentRes.body) {
