@@ -37,6 +37,17 @@ _HUMAN_DECISION_TO_STATUS: dict[str, str] = {
     "partial_settlement": ClaimStatus.PARTIAL_SETTLEMENT.value,
 }
 
+# Statuses that represent a completed or locked claim lifecycle.
+# PENDING and UNDER_REVIEW are not terminal — under_review claims can be
+# re-submitted when the pipeline errored or timed out mid-run.
+_TERMINAL_STATUSES: frozenset[str] = frozenset({
+    ClaimStatus.AWAITING_HUMAN_APPROVAL.value,
+    ClaimStatus.AGENT_APPROVED.value,
+    ClaimStatus.REJECTED.value,
+    ClaimStatus.PARTIAL_SETTLEMENT.value,
+    ClaimStatus.SETTLED.value,
+})
+
 
 @app.get("/healthz")
 async def healthz() -> dict:
@@ -122,6 +133,31 @@ async def get_claim(claim_id: str) -> dict:
     return claim
 
 
+@app.delete("/claims/{claim_id}", status_code=204)
+async def delete_claim(claim_id: str) -> None:
+    """Delete a claim and all its associated records.
+
+    Only claims in PENDING or UNDER_REVIEW status can be deleted. Terminal
+    claims (approved, rejected, awaiting approval, settled) are protected.
+
+    Args:
+        claim_id: UUID of the claim to delete.
+
+    Raises:
+        HTTPException 404: Claim not found.
+        HTTPException 409: Claim is in a terminal status.
+    """
+    claim = await bq.get_claim(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim["status"] in _TERMINAL_STATUSES:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete a claim that has been processed or is awaiting approval",
+        )
+    await bq.delete_claim(claim_id)
+
+
 @app.post("/claims/{claim_id}/run")
 async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
     """Start the 4-stage agent pipeline for a claim and stream events as SSE.
@@ -144,7 +180,7 @@ async def run_claim_pipeline(claim_id: str) -> StreamingResponse:
     claim = await bq.get_claim(claim_id)
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
-    if claim["status"] != ClaimStatus.PENDING.value:
+    if claim["status"] in _TERMINAL_STATUSES:
         raise HTTPException(
             status_code=409,
             detail=f"Claim is already in status: {claim['status']}",

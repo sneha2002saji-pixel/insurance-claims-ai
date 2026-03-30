@@ -300,3 +300,36 @@ async def update_hitl_decision(claim_id: str, decision: str, comment: str) -> No
         lambda: client.query(query, job_config=config).result()
     )
     logger.info("hitl_decision_recorded", claim_id=claim_id, decision=decision)
+
+
+async def delete_claim(claim_id: str) -> None:
+    """Delete a claim and its related records (audit_log, agent_analyses, human_approval_requests).
+
+    Deletes in dependency order: child tables first, then the claim row itself.
+
+    Args:
+        claim_id: UUID of the claim to delete.
+
+    Raises:
+        RuntimeError: If any DML job fails.
+    """
+    client = _client()
+    # Delete in dependency order: child tables first, then the claim row
+    for table, col in [
+        ("human_approval_requests", "claim_id"),
+        ("agent_analyses", "claim_id"),
+        ("audit_log", "claim_id"),
+        ("insurance_claims", "id"),
+    ]:
+        query = f"""
+            DELETE FROM `{_table(table)}`
+            WHERE {col} = @claim_id
+        """
+        config = _job_config(
+            [bigquery.ScalarQueryParameter("claim_id", "STRING", claim_id)],
+            stage="delete_claim",
+        )
+        await asyncio.to_thread(
+            lambda q=query, c=config: client.query(q, job_config=c).result()
+        )
+    logger.info("claim_deleted", claim_id=claim_id)
