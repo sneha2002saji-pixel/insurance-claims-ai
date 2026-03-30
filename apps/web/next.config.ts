@@ -3,10 +3,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  experimental: {
-    turbopack: {
-      root: path.resolve(__dirname, "../../"),
-    },
+  turbopack: {
+    root: path.resolve(__dirname, "../../"),
   },
 };
 
