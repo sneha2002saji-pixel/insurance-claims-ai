@@ -1,3 +1,5 @@
+import { getIdentityToken } from '@/lib/gcp-auth'
+
 const AGENT_URL = process.env.AGENT_SERVICE_URL ?? 'http://localhost:8000'
 const UUID_RE = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 
@@ -14,11 +16,15 @@ export async function POST(
     )
   }
 
+  const token = await getIdentityToken(AGENT_URL)
+  const sseHeaders: Record<string, string> = { Accept: 'text/event-stream' }
+  if (token) sseHeaders['Authorization'] = `Bearer ${token}`
+
   let agentRes: Response
   try {
     agentRes = await fetch(`${AGENT_URL}/claims/${id}/run`, {
       method: 'POST',
-      headers: { Accept: 'text/event-stream' },
+      headers: sseHeaders,
     })
   } catch (err) {
     if (err instanceof TypeError) {

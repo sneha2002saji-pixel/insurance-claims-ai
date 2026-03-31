@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { InsuranceClaim, ClaimStatus } from '@insurance/shared-types'
 import { STATUS_LABELS } from '@insurance/shared-types'
 import { ClaimDetailClient } from './ClaimDetailClient'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 const STATUS_BADGE_CLASSES: Record<ClaimStatus, string> = {
   pending: 'bg-slate-500/20 text-slate-400',

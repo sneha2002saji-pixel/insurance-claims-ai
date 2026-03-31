@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 const AGENT_URL = process.env.AGENT_SERVICE_URL ?? 'http://localhost:8000'
 
+async function agentHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
+  const token = await getIdentityToken(AGENT_URL)
+  const headers: Record<string, string> = { ...extra }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 export async function GET(): Promise<NextResponse> {
   try {
-    const res = await fetch(`${AGENT_URL}/claims`, { cache: 'no-store' })
+    const res = await fetch(`${AGENT_URL}/claims`, {
+      cache: 'no-store',
+      headers: await agentHeaders(),
+    })
     if (!res.ok) {
       return NextResponse.json(
         { error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch claims' } },
@@ -26,7 +37,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const body: unknown = await request.json()
     const res = await fetch(`${AGENT_URL}/claims`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await agentHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body),
     })
     if (!res.ok) {

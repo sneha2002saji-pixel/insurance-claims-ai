@@ -2,14 +2,20 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { InsuranceClaim } from '@insurance/shared-types'
 import { HitlReviewClient } from './HitlReviewClient'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 async function getClaim(id: string): Promise<InsuranceClaim | null> {
   const baseUrl =
     process.env.AGENT_SERVICE_URL_INTERNAL ??
     process.env.AGENT_SERVICE_URL ??
     'http://localhost:8000'
+  // Use the public URL as the identity token audience (Cloud Run requires the service URL)
+  const audience = process.env.AGENT_SERVICE_URL ?? baseUrl
+  const token = await getIdentityToken(audience)
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${baseUrl}/claims/${id}`, { cache: 'no-store' })
+    const res = await fetch(`${baseUrl}/claims/${id}`, { cache: 'no-store', headers })
     if (!res.ok) return null
     return (await res.json()) as InsuranceClaim
   } catch {

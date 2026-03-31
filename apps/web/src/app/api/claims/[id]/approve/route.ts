@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 const AGENT_URL = process.env.AGENT_SERVICE_URL ?? 'http://localhost:8000'
 const UUID_RE = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
@@ -42,9 +43,13 @@ export async function POST(
       )
     }
 
+    const token = await getIdentityToken(AGENT_URL)
+    const resumeHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) resumeHeaders['Authorization'] = `Bearer ${token}`
+
     const res = await fetch(`${AGENT_URL}/claims/${id}/resume`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: resumeHeaders,
       body: JSON.stringify(body),
     })
     if (!res.ok) {

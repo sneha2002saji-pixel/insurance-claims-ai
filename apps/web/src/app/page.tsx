@@ -1,16 +1,23 @@
 import Link from 'next/link'
 import type { InsuranceClaim, PaginatedResponse } from '@insurance/shared-types'
 import { ClaimCard } from '@/components'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 async function getClaims(): Promise<InsuranceClaim[]> {
   const baseUrl =
     process.env.AGENT_SERVICE_URL_INTERNAL ??
     process.env.AGENT_SERVICE_URL ??
     'http://localhost:8000'
+  // Use the public URL as the identity token audience (Cloud Run requires the service URL)
+  const audience = process.env.AGENT_SERVICE_URL ?? baseUrl
+  const token = await getIdentityToken(audience)
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
     const res = await fetch(`${baseUrl}/claims`, {
       cache: 'no-store',
       next: { revalidate: 0 },
+      headers,
     })
     if (!res.ok) return []
     const body = (await res.json()) as PaginatedResponse<InsuranceClaim>

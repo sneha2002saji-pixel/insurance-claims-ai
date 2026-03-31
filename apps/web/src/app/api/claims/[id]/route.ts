@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getIdentityToken } from '@/lib/gcp-auth'
 
 const AGENT_URL = process.env.AGENT_SERVICE_URL ?? 'http://localhost:8000'
 const UUID_RE = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
@@ -13,6 +14,13 @@ function validateId(id: string): NextResponse | null {
   return null
 }
 
+async function agentHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
+  const token = await getIdentityToken(AGENT_URL)
+  const headers: Record<string, string> = { ...extra }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -21,7 +29,10 @@ export async function GET(
   const idError = validateId(id)
   if (idError) return idError
   try {
-    const res = await fetch(`${AGENT_URL}/claims/${id}`, { cache: 'no-store' })
+    const res = await fetch(`${AGENT_URL}/claims/${id}`, {
+      cache: 'no-store',
+      headers: await agentHeaders(),
+    })
     if (!res.ok) {
       if (res.status === 404) {
         return NextResponse.json(
@@ -55,6 +66,7 @@ export async function DELETE(
     const res = await fetch(`${AGENT_URL}/claims/${id}`, {
       method: 'DELETE',
       cache: 'no-store',
+      headers: await agentHeaders(),
     })
     if (!res.ok) {
       const data: unknown = res.status === 404
