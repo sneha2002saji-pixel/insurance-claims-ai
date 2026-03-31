@@ -122,7 +122,7 @@ pipeline:
                         --project=<+pipeline.variables.GCP_PROJECT_ID> \
                         --platform=managed \
                         --no-allow-unauthenticated \
-                        --service-account=bfsi-na-ai-engineering@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
+                        --service-account=gcp-harness-sa@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
                         --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_LOCATION=us-central1,GOOGLE_CLOUD_PROJECT=<+pipeline.variables.GCP_PROJECT_ID>" \
                         --set-secrets="GCP_PROJECT_ID=GCP_PROJECT_ID:latest,REDIS_URL=REDIS_URL:latest" \
                         --memory=1Gi \
@@ -168,7 +168,7 @@ pipeline:
                         --project=<+pipeline.variables.GCP_PROJECT_ID> \
                         --platform=managed \
                         --allow-unauthenticated \
-                        --service-account=bfsi-na-ai-engineering@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
+                        --service-account=gcp-harness-sa@<+pipeline.variables.GCP_PROJECT_ID>.iam.gserviceaccount.com \
                         --set-env-vars="AGENT_SERVICE_URL=${AGENT_URL},AGENT_SERVICE_URL_INTERNAL=${AGENT_URL}" \
                         --memory=512Mi \
                         --cpu=1 \
