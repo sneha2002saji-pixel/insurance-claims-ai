@@ -47,4 +47,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# In a monorepo standalone build, Next.js mirrors the workspace path inside the
+# standalone output: the entry point is apps/web/server.js, not server.js.
+WORKDIR /app/apps/web
+
 CMD ["node", "server.js"]
