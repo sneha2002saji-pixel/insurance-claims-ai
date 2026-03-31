@@ -111,8 +111,10 @@ pipeline:
                   type: Run
                   spec:
                     shell: Sh
+                    envVariables:
+                      GCP_SA_KEY: <+secrets.getValue("GCP_Connector_Secret")>
                     command: |
-                      echo '<+secrets.getValue("GCP_Connector_Secret")>' > /tmp/sa-key.json
+                      printf '%s' "$GCP_SA_KEY" > /tmp/sa-key.json
                       gcloud auth activate-service-account --key-file=/tmp/sa-key.json
                       gcloud run deploy insurance-agent \
                         --image=<+pipeline.variables.REGISTRY>/agent:<+pipeline.sequenceId> \
@@ -151,8 +153,10 @@ pipeline:
                   type: Run
                   spec:
                     shell: Sh
+                    envVariables:
+                      GCP_SA_KEY: <+secrets.getValue("GCP_Connector_Secret")>
                     command: |
-                      echo '<+secrets.getValue("GCP_Connector_Secret")>' > /tmp/sa-key.json
+                      printf '%s' "$GCP_SA_KEY" > /tmp/sa-key.json
                       gcloud auth activate-service-account --key-file=/tmp/sa-key.json
                       AGENT_URL=$(gcloud run services describe insurance-agent \
                         --region=<+pipeline.variables.REGION> \
